@@ -7,21 +7,20 @@ import (
 )
 
 func main() {
-	var wg sync.WaitGroup // synchronised counter for Go routines
-	for i := 1; i <= 65535; i++ {
-		wg.Add(1) // increment the counter each time you create a go routine to scan a port
+	const grs = 65535 // Number of Go Routines
+	var wg sync.WaitGroup
+	wg.Add(grs)
+	for i := 1; i <= grs; i++ {
 		go func(j int) {
-			wg.Done() // decrement the counter whenever a go routine has been performed
-			address := fmt.Sprintf("127.0.0.1:%d", j)
+			defer wg.Done()
+			address := fmt.Sprintf("scanme.nmap.org:%d", j)
 			conn, err := net.Dial("tcp", address)
-			if err != nil {
-				// port is closed or filtered
-				return
+			// If the connection is successful close the connection and print the numberß
+			if err == nil {
+				conn.Close()
+				fmt.Printf("TCP/%d open\n", j)
 			}
-			// Connection is successful
-			conn.Close() // FINishing the connection is just polite
-			fmt.Printf("TCP/%d open\n", j)
 		}(i)
 	}
-	wg.Wait() // block going further until the counter has returned zero
+	wg.Wait() // don't return main() until all go routines are finished
 }
